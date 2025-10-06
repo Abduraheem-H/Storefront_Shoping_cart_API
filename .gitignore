@@ -1,0 +1,54 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+.Python
+
+# Pipenv creates virtualenvs 
+/.mypy_cache/
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+*.log
+
+# Settings/secrets
+.env
+
+# Editor settings
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Pytest / coverage
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Dist / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+*.whl
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Mescellaneous
+.pyre/
+playground/
+store_custom/
+
+# Local database from some tools
+*.sqlite3-journal
+
