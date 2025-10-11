@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 
 from pathlib import Path
 import os
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,14 +22,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-import os
+env = environ.Env(DEBUG=(bool, False))
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+SECRET_KEY = env("DJANGO_SECRET_KEY")
+
 if not SECRET_KEY:
     raise RuntimeError("The DJANGO_SECRET_KEY environment variable is not set!")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = []
 
@@ -94,12 +97,14 @@ WSGI_APPLICATION = "storefront.wsgi.application"
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 DATABASES = {
-    "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-    "ENGINE": "django.db.backends.postgresql",
-    "NAME": "storefront2",
-    "USER": "postgres",
-    "HOST": "localhost",
-    "PORT": "5432",
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "storefront2",
+        "USER": "postgres",
+        "PASSWORD": env("DB_PASSWORD"),
+        "HOST": "localhost",
+        "PORT": "5432",
+    }
 }
 
 
