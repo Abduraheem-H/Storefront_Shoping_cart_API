@@ -3,21 +3,24 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.mixins import (
     CreateModelMixin,
     RetrieveModelMixin,
     DestroyModelMixin,
+    UpdateModelMixin,
 )
 from rest_framework.viewsets import GenericViewSet
 
 from .filters import ProductFilter
-from .models import Cart, CartItem, OrderItem, Product, Collection, Review
+from .models import Cart, CartItem, Customer, OrderItem, Product, Collection, Review
 from .pagination import DefaultPagination
 from .serializers import (
     AddCartItemSerializer,
     CartItemSerializer,
     CartSerializer,
+    CustomerSerializer,
     ProductSerializer,
     CollectionSerializer,
     ReviewSerializer,
@@ -104,3 +107,24 @@ class CartItemViewSet(ModelViewSet):
 
     def get_serializer_context(self):
         return {"cart_id": self.kwargs["cart_pk"]}
+
+
+class CustomerViewSet(
+    CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, GenericViewSet
+):
+    queryset = Customer.objects.all()
+    serializer_class = CustomerSerializer
+
+    def get_serializer_context(self):
+        return {"request": self.request}
+
+    @action(detail=False, methods=["get", "put"], url_path="me")
+    def me(self, request):
+        customer, created = Customer.objects.get_or_create(user=request.user)
+        if request.method == "PUT":
+            serializer = self.get_serializer(customer, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        serializer = self.get_serializer(customer)
+        return Response(serializer.data)
