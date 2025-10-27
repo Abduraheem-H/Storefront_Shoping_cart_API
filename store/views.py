@@ -18,17 +18,29 @@ from rest_framework.viewsets import GenericViewSet
 from store.permissions import IsAdminOrReadOnly, ViewCustomerHistoryPermission
 
 from .filters import ProductFilter
-from .models import Cart, CartItem, Customer, OrderItem, Product, Collection, Review
+from .models import (
+    Cart,
+    CartItem,
+    Customer,
+    Order,
+    OrderItem,
+    Product,
+    Collection,
+    Review,
+)
 from .pagination import DefaultPagination
 from .serializers import (
     AddCartItemSerializer,
     CartItemSerializer,
     CartSerializer,
+    CreateOrderSerializer,
     CustomerSerializer,
+    OrderSerializer,
     ProductSerializer,
     CollectionSerializer,
     ReviewSerializer,
     UpdateCartItemSerializer,
+    UpdateOrderSerializer,
 )
 
 
@@ -144,3 +156,38 @@ class CustomerViewSet(ModelViewSet):
             return Response(serializer.data)
         serializer = self.get_serializer(customer)
         return Response(serializer.data)
+
+
+class OrderViewSet(ModelViewSet):
+    http_method_names = ["get", "patch", "delete", "head", "options"]
+    serializer_class = OrderSerializer
+
+    def get_permissions(self):
+        if self.request.method in ["PATCH", "DELETE"]:
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
+
+    def create(self, request, *args, **kwargs):
+        serializer = CreateOrderSerializer(
+            data=request.data, context={"user": request.user}
+        )
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        order_serializer = OrderSerializer(order)
+        return Response(order_serializer.data, status=status.HTTP_201_CREATED)
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Order.objects.all()
+        return Order.objects.filter(customer__user=user)
+
+    def get_serializer_context(self):
+        return {"user": self.request.user}
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return CreateOrderSerializer
+        elif self.action == "partial_update":
+            return UpdateOrderSerializer
+        return OrderSerializer
