@@ -11,6 +11,7 @@ from .models import (
     Collection,
     Review,
 )
+from .signals import order_created
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -165,7 +166,7 @@ class CreateOrderSerializer(serializers.Serializer):
         with transaction.atomic():
             cart_id = self.validated_data["cart_id"]
             user = self.context["user"]
-            customer, created = Customer.objects.get_or_create(user_id=user.id)
+            customer = Customer.objects.get(user_id=user.id)
             order = Order.objects.create(customer=customer)
 
             cart_items = CartItem.objects.select_related("product").filter(
@@ -185,6 +186,7 @@ class CreateOrderSerializer(serializers.Serializer):
             Cart.objects.filter(
                 id=cart_id
             ).delete()  # Clear the cart after creating the order
+            order_created.send_robust(sender=self.__class__, order=order)  # Send signal
             return order
 
 

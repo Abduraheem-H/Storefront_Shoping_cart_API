@@ -148,7 +148,7 @@ class CustomerViewSet(ModelViewSet):
         permission_classes=[IsAuthenticated],
     )
     def me(self, request):
-        customer, created = Customer.objects.get_or_create(user=request.user)
+        customer = Customer.objects.get(user=request.user)
         if request.method == "PUT":
             serializer = self.get_serializer(customer, data=request.data)
             serializer.is_valid(raise_exception=True)
