@@ -9,6 +9,7 @@ from .models import (
     OrderItem,
     Product,
     Collection,
+    ProductImage,
     Review,
 )
 from .signals import order_created
@@ -23,7 +24,19 @@ class CollectionSerializer(serializers.ModelSerializer):
     product_count = serializers.IntegerField(read_only=True)
 
 
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ["id", "image"]
+        read_only_fields = ["id"]
+
+    def create(self, validated_data):
+        product_id = self.context["product_id"]
+        return ProductImage.objects.create(product_id=product_id, **validated_data)
+
+
 class ProductSerializer(serializers.ModelSerializer):
+    images = ProductImageSerializer(many=True, read_only=True)
     class Meta:
         model = Product
         fields = [
@@ -35,6 +48,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "description",
             "slug",
             "inventory",
+            "images",
         ]
         read_only_fields = ["price_with_tax"]
 

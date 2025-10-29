@@ -26,6 +26,7 @@ from .models import (
     OrderItem,
     Product,
     Collection,
+    ProductImage,
     Review,
 )
 from .pagination import DefaultPagination
@@ -36,6 +37,7 @@ from .serializers import (
     CreateOrderSerializer,
     CustomerSerializer,
     OrderSerializer,
+    ProductImageSerializer,
     ProductSerializer,
     CollectionSerializer,
     ReviewSerializer,
@@ -45,7 +47,7 @@ from .serializers import (
 
 
 class ProductViewSet(ModelViewSet):
-    queryset = Product.objects.all()
+    queryset = Product.objects.prefetch_related("images").all()
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = ProductFilter
@@ -191,3 +193,14 @@ class OrderViewSet(ModelViewSet):
         elif self.action == "partial_update":
             return UpdateOrderSerializer
         return OrderSerializer
+
+
+class ProductImageViewSet(ModelViewSet):
+    serializer_class = ProductImageSerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+    def get_queryset(self):
+        return ProductImage.objects.filter(product_id=self.kwargs["product_pk"])
+
+    def get_serializer_context(self):
+        return {"product_id": self.kwargs["product_pk"]}
