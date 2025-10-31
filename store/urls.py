@@ -18,3 +18,5 @@ products_router.register("reviews", views.ReviewViewSet, basename="product-revie
 products_router.register("images", views.ProductImageViewSet, basename="product-images")
 
 urlpatterns = router.urls + carts_router.urls + products_router.urls
+
+app_name = "store"

@@ -16,8 +16,12 @@ djoser = "*"
 djangorestframework-simplejwt = "*"
 pillow = "*"
 django-cors-headers = "*"
+redis = "*"
 
 [dev-packages]
+pytest = "*"
+pytest-django = "*"
+pytest-watch = "*"  # for auto-reloading tests
 
 [requires]
 python_version = "3.13"
