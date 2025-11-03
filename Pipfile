@@ -22,6 +22,7 @@ redis = "*"
 pytest = "*"
 pytest-django = "*"
 pytest-watch = "*"  # for auto-reloading tests
+model-bakery = "*"
 
 [requires]
 python_version = "3.13"

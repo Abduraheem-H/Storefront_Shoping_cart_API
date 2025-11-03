@@ -1,9 +1,9 @@
-from requests import get
+from django.contrib.auth.models import User
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
-from django.urls import reverse
+from model_bakery import baker
 from pytest import mark
-from django.contrib.auth.models import User
 
 
 @mark.django_db
@@ -61,3 +61,105 @@ class TestCreateCollection:
         )
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["id"] > 0
+
+
+@mark.django_db
+class TestRetrieveCollection:
+
+    def test_if_collection_exists_returns_200(self, api_client: APIClient):
+        collection = baker.make("store.Collection")
+        response = api_client.get(
+            reverse("store:collection-detail", args=[collection.id])
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data == {
+            "id": collection.id,
+            "title": collection.title,
+            "product_count": 0,
+        }
+
+    def test_if_collection_does_not_exist_returns_404(self, api_client: APIClient):
+        response = api_client.get(reverse("store:collection-detail", args=[999]))
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+class TestDeleteCollection:
+    @mark.django_db
+    def test_if_collection_has_products_returns_405(
+        self, api_client: APIClient, authenticate
+    ):
+        authenticate(is_staff=True)
+        collection = baker.make("store.Collection")
+        baker.make("store.Product", collection=collection, _quantity=1)
+
+        response = api_client.delete(
+            reverse("store:collection-detail", args=[collection.id])
+        )
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+        assert response.data["error"] == (
+            "Collection cannot be deleted because it includes one or more products."
+        )
+
+    @mark.django_db
+    def test_if_collection_has_no_products_returns_204(
+        self, api_client: APIClient, authenticate
+    ):
+        authenticate(is_staff=True)
+        collection = baker.make("store.Collection")
+
+        response = api_client.delete(
+            reverse("store:collection-detail", args=[collection.id])
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert response.data is None
+
+    @mark.django_db
+    def test_if_user_is_not_admin_returns_403_on_delete(
+        self, api_client: APIClient, authenticate
+    ):
+        authenticate(is_staff=False)
+        collection = baker.make("store.Collection")
+
+        response = api_client.delete(
+            reverse("store:collection-detail", args=[collection.id])
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+class TestListCollections:
+    @mark.django_db
+    def test_list_collections_returns_200(self, api_client: APIClient):
+        baker.make("store.Collection", _quantity=3)
+
+        response = api_client.get(reverse("store:collection-list"))
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 3
+
+
+class TestUpdateCollection:
+    @mark.django_db
+    def test_update_collection_returns_200(self, api_client: APIClient, authenticate):
+        authenticate(is_staff=True)
+        collection = baker.make("store.Collection")
+        updated_data = {"title": "Updated Collection Title"}
+
+        response = api_client.put(
+            reverse("store:collection-detail", args=[collection.id]),
+            data=updated_data,
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["title"] == updated_data["title"]
+
+    @mark.django_db
+    def test_if_user_is_not_admin_returns_403_on_update(
+        self, api_client: APIClient, authenticate
+    ):
+        authenticate(is_staff=False)
+        collection = baker.make("store.Collection")
+        updated_data = {"title": "Updated Collection Title"}
+
+        response = api_client.put(
+            reverse("store:collection-detail", args=[collection.id]),
+            data=updated_data,
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
